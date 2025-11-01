@@ -10,6 +10,7 @@ import cpp from 'highlight.js/lib/languages/cpp';
 import typescript from 'highlight.js/lib/languages/typescript';
 import html from 'highlight.js/lib/languages/xml';
 import css from 'highlight.js/lib/languages/css';
+import axios from 'axios';
 
 hljs.registerLanguage('javascript', javascript);
 hljs.registerLanguage('python', python);
@@ -27,6 +28,23 @@ function App() {
   const [projectFiles, setProjectFiles] = useState([]); // { name, content, path }
   const editorRef = useRef(null);
   const folderInputRef = useRef(null);
+
+
+  // === HEALTH CHECK ON MOUNT ===
+
+
+  const checkHealth = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/review/health');
+      if (res.ok) {
+        setHealthStatus('up');
+      } else {
+        setHealthStatus('down');
+      }
+    } catch (err) {
+      setHealthStatus('down');
+    }
+  };
 
   const detectLanguage = (content, fileName = '') => {
     const ext = fileName.split('.').pop()?.toLowerCase() || '';
@@ -108,7 +126,7 @@ function App() {
     setReviewResult('Loading…');
 
     try {
-      const res = await fetch('http://localhost:8000/api/review', {
+      const res = await fetch('http://localhost:8080/api/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, language: lang }),
@@ -179,6 +197,10 @@ function App() {
 
       <button className="review-btn" onClick={handleReview}>
         Review Code
+      </button>
+
+      <button className="review-btn" onClick={checkHealth}>
+        Health
       </button>
 
       {reviewResult && (
